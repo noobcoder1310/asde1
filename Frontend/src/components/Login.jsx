@@ -1,72 +1,80 @@
-import React from 'react'
-import { Link } from 'react-router-dom'; 
-import { useForm } from "react-hook-form"// Import Link
-
+import React, { useContext } from 'react';
+import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { AuthContext } from '../context/AuthProvider';
+import { Link } from 'react-router-dom';
 
 function Login() {
-  const {
-    register,
-    handleSubmit,
-    
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [authUser, setAuthUser] = useContext(AuthContext);
 
-  const onSubmit = (data) => {
-    console.log("Login Data:", data);
-    // You can add authentication logic here
-    document.getElementById("my_modal_3").close(); // ✅ Close the modal after login
+  const onSubmit = async (data) => {
+    const userInfo = {
+      email: data.email,
+      password: data.password,
+    };
+
+    try {
+      const res = await axios.post("http://localhost:4001/users/login", userInfo);
+      if (res.data) {
+        toast.success("Logged in successfully");
+        setAuthUser(res.data.user);
+        localStorage.setItem("Users", JSON.stringify(res.data.user));
+        document.getElementById("login_modal")?.close(); // Close the modal
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong.");
+    }
   };
 
   return (
-    <div>
-      {/* You can open the modal using document.getElementById('ID').showModal() method */}
-<dialog id="my_modal_3" className="modal">
-  <div className="modal-box">
-    <form  onSubmit={handleSubmit(onSubmit)}method="dialog">
-      {/* if there is a button in form, it will close the modal */}
-      <button 
-      onClick={() => document.getElementById("my_modal_3").close()} 
-      className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-    >
-      ✕
-    </button>
-   
-    <h3 className="font-bold text-lg cursor-pointer">Login</h3>
-    
-    <div className='mt-4 space-y-2'>
-        <span>Email</span>
-       < br/>
-        <input type='Email'
-        placeholder="Enter ur email" className='w-80 px-3 py-1 border rounded-md'
-        {...register("email", { required: true })}
-        />
-        <br/>
-                {errors.email && <span className='text-sm text-red-500'>This field is required</span>}
+    <div className="relative">
+      {/* ✕ Close Button */}
+      
 
-    </div>
-    <div className='mt-4 space-y-2'>
-        <span>Password</span>
-       < br/>
-        <input type='Password'
-        placeholder="Enter ur Password" className='w-80 px-3 py-1 border rounded-md'
-        {...register("password", { required: true })}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 pt-10">
+        <h2 className="text-xl font-semibold mb-2 dark:text-white">Login</h2>
+
+        <input
+          type="email"
+          placeholder="Email"
+          {...register("email", { required: "Email is required" })}
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 dark:text-white focus:outline-none"
         />
-        <br/>
-        {errors.password  && <span className='text-sm text-red-500'>This field is required</span>}
-    </div>
-    <div className='flex justify-around mt-4'>
-        <button className='bg-pink-500 text-white rounded-md px-3 py-1 hover:bg-pink-700 duration-200 cursor-pointer'>
-            Login
+        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+
+        <input
+          type="password"
+          placeholder="Password"
+          {...register("password", { required: "Password is required" })}
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 dark:text-white focus:outline-none"
+        />
+        {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+        >
+          Login
         </button>
-        <p>Not registered? {""}
-        <Link to="/signup" className='underline text-blue-500 cursor-pointer'>Signp</Link> {""}</p>
+        
+        {/* SignUp Link at Bottom */}
+        <p className="text-center mt-4">
+          Don't have an account?{" "}
+          <Link 
+            to="/signup" // Directs to the SignUp page
+            className="text-blue-500 underline"
+          >
+            Sign Up
+          </Link>
+        </p>
+      </form>
     </div>
-    </form>
-    
-  </div>
-</dialog>
-    </div>
-  )
+  );
 }
 
-export default Login
+export default Login;
